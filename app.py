@@ -111,17 +111,15 @@ def check_password():
     st.stop()
 
 
-# Run the security gate
+# Run security check
 check_password()
 
-# --- IF UNLOCKED: FULL SYSTEM LOADS BELOW ---
-
-# Top Header Banner
+# --- TOP HEADER BANNER ---
 st.markdown("""
     <div class="top-header-banner">
         <div>
             <h1 class="top-header-title">🤖 Deepu AI Bot</h1>
-            <p class="top-header-subtitle">JARVIS & FRIDAY Autonomous OS • Secured Edition</p>
+            <p class="top-header-subtitle">JARVIS & FRIDAY Autonomous OS • Iron Man Mode Active</p>
         </div>
         <div style="text-align: right;">
             <span style="background: #065f46; color: #34d399; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold;">● SECURED & ONLINE</span>
@@ -179,7 +177,7 @@ live_weather = get_live_weather()
 
 # --- SIDEBAR CONTROL CENTER ---
 with st.sidebar:
-  st.markdown("### 🛡️ SECURITY: LOCKED & SECURE")
+  st.markdown("### 🛡️ IRON MAN PROTOCOL: ACTIVE")
 
   clock_html = """
     <div style="font-family: monospace; font-size: 15px; color: #00ffcc; background: #1f2937; padding: 8px; border-radius: 6px; text-align: center; border: 1px solid #374151; font-weight: bold; margin-bottom: 10px;">
@@ -222,8 +220,12 @@ with st.sidebar:
   )
 
   st.markdown("---")
-  st.subheader("🔊 Audio Output")
-  enable_tts = st.checkbox("AI ki Aawaz (Voice Reply)", value=False)
+  st.subheader("🔊 Audio / Voice Settings")
+  enable_tts = st.checkbox(
+      "JARVIS Voice Output (Auto-Speak)",
+      value=True,
+      help="AI apne jawaab ko khud bol kar sunayega.",
+  )
 
   st.markdown("---")
   st.subheader("🌐 Live Web Search")
@@ -247,7 +249,7 @@ with st.sidebar:
   pdf_analyze_btn = st.button("File Analysing Karein")
 
   st.markdown("---")
-  st.subheader("🎙️ Voice Input")
+  st.subheader("🎙️ Iron Man Mic Control")
   audio_data = mic_recorder(
       start_prompt="🔴 Bolna Shuru Karein",
       stop_prompt="⏹️ Rok Dein",
@@ -275,7 +277,8 @@ def get_system_prompt():
   if persona_mode == "JARVIS / FRIDAY (Elite Tech Assistant)":
     return (
         f"You are Deepu AI, operating under JARVIS and FRIDAY protocols. You"
-        f" serve only Deepu (Boss) with supreme loyalty. {base_context}"
+        f" serve only Deepu (Boss) with supreme loyalty. Keep answers sharp,"
+        f" technical, and helpful. {base_context}"
     )
   elif persona_mode == "Desi Dost & Shayari Mode":
     return (
@@ -287,18 +290,28 @@ def get_system_prompt():
     )
 
 
-# --- TEXT-TO-SPEECH ---
+# --- TEXT-TO-SPEECH (IRON MAN VOICE ENGINE) ---
 def speak_text(text):
   if enable_tts:
-    clean_text = text.replace('"', "").replace("'", "").replace("\n", " ")
+    # Clean text to prevent JS syntax crash
+    clean_text = (
+        text.replace('"', "")
+        .replace("'", "")
+        .replace("\n", " ")
+        .replace("`", "")
+    )
     js_code = f"""
         <script>
-            var msg = new SpeechSynthesisUtterance("{clean_text}");
-            msg.lang = 'hi-IN';
-            window.speechSynthesis.speak(msg);
+            if ('speechSynthesis' in window) {{
+                window.speechSynthesis.cancel(); // Stop any ongoing speech
+                var msg = new SpeechSynthesisUtterance("{clean_text}");
+                msg.lang = 'hi-IN';
+                msg.rate = 1.0;
+                window.speechSynthesis.speak(msg);
+            }}
         </script>
         """
-    st.markdown(js_code, unsafe_allow_html=True)
+    components.html(js_code, height=0)
 
 
 # --- LIVE WEB SEARCH MODULE ---
@@ -433,27 +446,6 @@ if pdf_analyze_btn and uploaded_pdf is not None:
     st.error(f"Document processing error: {e}")
 
 
-# --- VOICE TRANSCRIPTION ---
-voice_text = None
-if audio_data and "bytes" in audio_data:
-  try:
-    with open("temp_audio.wav", "wb") as f:
-      f.write(audio_data["bytes"])
-    with open("temp_audio.wav", "rb") as audio_file:
-      transcript = client.audio.transcriptions.create(
-          model="whisper-large-v3", file=("temp_audio.wav", audio_file.read())
-      )
-      voice_text = transcript.text
-  except Exception as e:
-    st.error(f"Voice processing error: {e}")
-
-
-# --- RENDER CHAT HISTORY ---
-for message in st.session_state.messages:
-  with st.chat_message(message["role"]):
-    st.markdown(message["content"])
-
-
 # --- CORE RESPONSE PROCESSOR ---
 def process_and_respond(user_text):
   st.session_state.messages.append({"role": "user", "content": user_text})
@@ -492,9 +484,28 @@ def process_and_respond(user_text):
       st.error(f"Error: {e}")
 
 
-if voice_text:
-  process_and_respond(voice_text)
+# --- VOICE TRANSCRIPTION & HANDLING ---
+if audio_data and "bytes" in audio_data:
+  try:
+    with open("temp_audio.wav", "wb") as f:
+      f.write(audio_data["bytes"])
+    with open("temp_audio.wav", "rb") as audio_file:
+      transcript = client.audio.transcriptions.create(
+          model="whisper-large-v3", file=("temp_audio.wav", audio_file.read())
+      )
+      voice_text = transcript.text
+      if voice_text:
+        process_and_respond(voice_text)
+  except Exception as e:
+    st.error(f"Voice processing error: {e}")
 
-# --- CHAT INPUT ---
+
+# --- RENDER CHAT HISTORY ---
+for message in st.session_state.messages:
+  with st.chat_message(message["role"]):
+    st.markdown(message["content"])
+
+
+# --- CHAT INPUT (TEXT) ---
 if prompt := st.chat_input("JARVIS / Deepu AI se command dein..."):
   process_and_respond(prompt)
