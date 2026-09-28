@@ -11,8 +11,6 @@ import streamlit as st
 import streamlit.components.v1 as components
 from streamlit_mic_recorder import mic_recorder
 
-import streamlit as st
-
 st.set_page_config(
     page_title="Deepu AI Bot", page_icon="🤖", layout="wide"
 )
@@ -526,9 +524,6 @@ if audio_data and "bytes" in audio_data:
 
 
 # --- RENDER CHAT HISTORY ---
-for message in st.session_name.messages if "messages" in st.session_state else []: # Fallback fix
-    pass
-
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
