@@ -325,8 +325,8 @@ def speak_text(text):
 if search_btn and search_query:
     try:
         with DDGS() as ddgs:
-            results = [r for r in ddgs.text(search_query, max_results=3)]
-        search_summary = "\n".join([f"- {r['title']}: {r['body']}" for r in results])
+            results = [r for r in ddgs.text(search_query, max_results=3, region='wt-wt', safesearch='off')]
+        search_summary = "\n".join([f"- {r['title']}: {r['body']}" for r in results]) if results else "No direct results found."
         prompt = f"Live Search Results for '{search_query}':\n{search_summary}\n\nIn results ke adhaar par clear jawab Hindi mein dein:"
 
         with st.chat_message("user"):
@@ -453,7 +453,7 @@ if pdf_analyze_btn and uploaded_pdf is not None:
         st.error(f"Document processing error: {e}")
 
 
-# --- CORE RESPONSE PROCESSOR WITH AUTO WEB SEARCH ---
+# --- CORE RESPONSE PROCESSOR WITH STRICT WEB SEARCH INJECTION ---
 def process_and_respond(user_text):
     st.session_state.messages.append({"role": "user", "content": user_text})
     cursor.execute(
@@ -466,11 +466,11 @@ def process_and_respond(user_text):
 
     with st.chat_message("assistant"):
         try:
-            # Automatically fetch live web results for chat messages
+            # Automatically fetch live web results securely
             search_context = ""
             try:
                 with DDGS() as ddgs:
-                    results = [r for r in ddgs.text(user_text, max_results=3)]
+                    results = [r for r in ddgs.text(user_text, max_results=3, region='wt-wt', safesearch='off')]
                     if results:
                         search_context = "\n".join([f"- {r['title']}: {r['body']}" for r in results])
             except Exception:
@@ -480,11 +480,11 @@ def process_and_respond(user_text):
                 {"role": "system", "content": get_system_prompt()}
             ]
 
-            # If live search results are available, inject them into context
+            # Inject real-time search context with strict instructions
             if search_context:
                 chat_history_payload.append({
                     "role": "system",
-                    "content": f"Live Web Search Results for query '{user_text}':\n{search_context}\nUse these real-time internet facts to answer the user accurately."
+                    "content": f"IMPORTANT INSTRUCTION: Real-time web search results for the user's query are provided below. You MUST use these facts to answer the user directly. DO NOT say that you don't have access to live news or real-time updates.\n\nLive Search Data:\n{search_context}"
                 })
 
             for m in st.session_state.messages:
