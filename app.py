@@ -12,11 +12,35 @@ st.set_page_config(
     page_title="Deepu AI - JARVIS Edition", page_icon="⚡", layout="wide"
 )
 
-# --- ADVANCED CLEAN CSS FOR PERFECT TEXT & LAYOUT ---
+# --- ADVANCED CLEAN CSS & PERMANENT TOP HEADER BANNER ---
 st.markdown("""
     <style>
     .stApp {
         background-color: #0e1117;
+    }
+    /* Permanent Top Header Banner Style */
+    .top-header-banner {
+        background: linear-gradient(90deg, #1f2937 0%, #111827 100%);
+        border: 1px solid #374151;
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+    .top-header-title {
+        color: #00ffcc !important;
+        font-size: 26px;
+        font-weight: 800;
+        margin: 0;
+        letter-spacing: 1px;
+    }
+    .top-header-subtitle {
+        color: #9ca3af !important;
+        font-size: 14px;
+        margin: 0;
     }
     /* Input fields aur textareas ke liye clear visibility */
     .stTextInput input, .stTextArea textarea {
@@ -33,7 +57,7 @@ st.markdown("""
     label, .stMarkdown, span, p {
         color: #f3f4f6 !important;
     }
-    h1, h2, h3 {
+    h2, h3 {
         color: #00ffcc !important;
     }
     /* Sidebar spacing adjustment */
@@ -44,7 +68,18 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.title("⚡ Deepu AI Bot [JARVIS & FRIDAY PROTOCOL]")
+# --- PERMANENT TOP HEADER BAR ---
+st.markdown("""
+    <div class="top-header-banner">
+        <div>
+            <h1 class="top-header-title">🤖 Deepu AI Bot</h1>
+            <p class="top-header-subtitle">JARVIS & FRIDAY Protocol • Ultimate AI Assistant</p>
+        </div>
+        <div style="text-align: right;">
+            <span style="background: #065f46; color: #34d399; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold;">● SYSTEM ONLINE</span>
+        </div>
+    </div>
+""", unsafe_allow_html=True)
 
 # Streamlit secrets se API key uthana
 if "GROQ_API_KEY" in st.secrets:
