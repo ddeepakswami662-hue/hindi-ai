@@ -12,9 +12,19 @@ import streamlit.components.v1 as components
 from streamlit_mic_recorder import mic_recorder
 
 # --- PAGE CONFIG ---
+st.set_page_configimport streamlit as st
+
+# --- PAGE CONFIG WITH FORCED BROWSER TITLE ---
 st.set_page_config(
-    page_title="Deepu AI - SECURE OS", page_icon="🔒", layout="wide"
+    page_title="Deepu AI Bot", page_icon="🤖", layout="wide"
 )
+
+# Force browser tab title via HTML injection
+st.markdown("""
+    <script>
+        document.title = "Deepu AI Bot";
+    </script>
+""", unsafe_allow_html=True)
 
 # --- SECURITY & CYBERPUNK CSS ---
 st.markdown("""
