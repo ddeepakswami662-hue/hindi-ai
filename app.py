@@ -12,23 +12,34 @@ st.set_page_config(
     page_title="Deepu AI - JARVIS Edition", page_icon="⚡", layout="wide"
 )
 
-# --- CSS FIX FOR TEXT VISIBILITY & CYBERPUNK THEME ---
+# --- ADVANCED CLEAN CSS FOR PERFECT TEXT & LAYOUT ---
 st.markdown("""
     <style>
     .stApp {
         background-color: #0e1117;
     }
-    /* Text input aur select box mein text saaf dikhne ke liye */
-    .stTextInput input, .stSelectbox select, .stTextArea textarea {
+    /* Input fields aur textareas ke liye clear visibility */
+    .stTextInput input, .stTextArea textarea {
+        color: #ffffff !important;
+        background-color: #1f2937 !important;
+        border: 1px solid #374151 !important;
+    }
+    /* Selectbox dropdown text */
+    .stSelectbox div[data-baseweb="select"] {
         color: #ffffff !important;
         background-color: #1f2937 !important;
     }
-    /* Saare general text aur labels ke liye readable white/light color */
-    p, label, .stMarkdown, span {
-        color: #e5e7eb !important;
+    /* Saare labels, text aur paragraphs ke liye sharp white/light color */
+    label, .stMarkdown, span, p {
+        color: #f3f4f6 !important;
     }
     h1, h2, h3 {
         color: #00ffcc !important;
+    }
+    /* Sidebar spacing adjustment */
+    [data-testid="stSidebar"] {
+        background-color: #111827;
+        padding-top: 1rem;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -85,20 +96,18 @@ def get_live_weather():
 live_weather = get_live_weather()
 
 
-# --- SIDEBAR: HOLOGRAPHIC JARVIS DASHBOARD ---
+# --- SIDEBAR: CLEAN & ORGANIZED HOLOGRAPHIC DASHBOARD ---
 with st.sidebar:
-  st.markdown("### 🛡️ SYSTEM STATUS: ONLINE")
+  st.markdown("### 🛡️ SYSTEM STATUS")
 
-  # Live Working Clock with Seconds (JavaScript + IST Timezone)
-  st.markdown("🕒 **Live IST Time & Seconds:**")
+  # Compact Live Working Clock with Seconds (IST)
   clock_html = """
-    <div style="font-family: monospace; font-size: 18px; color: #00ffcc; background: #161b22; padding: 12px; border-radius: 6px; text-align: center; border: 1px solid #30363d; font-weight: bold;">
-        <span id="clock">Loading...</span>
+    <div style="font-family: monospace; font-size: 15px; color: #00ffcc; background: #1f2937; padding: 8px; border-radius: 6px; text-align: center; border: 1px solid #374151; font-weight: bold; margin-bottom: 10px;">
+        🕒 IST: <span id="clock">Loading...</span>
     </div>
     <script>
     function updateClock() {
         const now = new Date();
-        // Convert current time to India Standard Time (IST - UTC + 5:30)
         const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
         const istTime = new Date(utc + (3600000 * 5.5));
         
@@ -116,7 +125,7 @@ with st.sidebar:
     updateClock();
     </script>
     """
-  components.html(clock_html, height=70)
+  components.html(clock_html, height=45)
 
   st.markdown(f"🌤️ **Weather:** `{live_weather}`")
   st.markdown("---")
@@ -129,20 +138,19 @@ with st.sidebar:
           "Desi Dost & Shayari Mode",
           "Strict Professor / Expert",
       ],
+      label_visibility="collapsed",
   )
 
   st.markdown("---")
-  st.subheader("🔊 Audio Output (Text-to-Speech)")
-  enable_tts = st.checkbox(
-      "AI ki Aawaz On Karein (Voice Reply)", value=False
-  )
+  st.subheader("🔊 Audio Output")
+  enable_tts = st.checkbox("AI ki Aawaz (Voice Reply)", value=False)
 
   st.markdown("---")
   st.subheader("🌐 Web URL Summarizer")
   website_url = st.text_input(
-      "Website Link yahan daalein:", placeholder="https://example.com"
+      "Website Link:", placeholder="https://example.com"
   )
-  summarize_btn = st.button("Website Summarize Karein")
+  summarize_btn = st.button("Summarize Karein")
 
   st.markdown("---")
   st.subheader("📸 Media Upload")
@@ -150,10 +158,10 @@ with st.sidebar:
       "Photo upload karein:", type=["jpg", "jpeg", "png"]
   )
   if uploaded_file is not None:
-    st.success("Photo successfully linked!")
+    st.success("Photo linked successfully!")
 
   st.markdown("---")
-  st.subheader("🎙️ Voice Input (Mic)")
+  st.subheader("🎙️ Voice Input")
   audio_data = mic_recorder(
       start_prompt="🔴 Bolna Shuru Karein",
       stop_prompt="⏹️ Rok Dein",
@@ -190,7 +198,7 @@ def get_system_prompt():
     )
 
 
-# --- TEXT-TO-SPEECH JAVASCRIPT INJECTOR (JARVIS Voice) ---
+# --- TEXT-TO-SPEECH JAVASCRIPT INJECTOR ---
 def speak_text(text):
   if enable_tts:
     clean_text = text.replace('"', "").replace("'", "").replace("\n", " ")
