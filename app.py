@@ -1,14 +1,30 @@
+from datetime import datetime
 import sqlite3
-import streamlit as st
-from bs4 import BeautifulSoup
 import requests
+from bs4 import BeautifulSoup
 from groq import Groq
+import streamlit as st
 from streamlit_mic_recorder import mic_recorder
 
 # --- PAGE CONFIG ---
-st.set_page_config(page_title="Deepu AI Bot", page_icon="🤖", layout="wide")
+st.set_page_config(
+    page_title="Deepu AI - JARVIS Edition", page_icon="⚡", layout="wide"
+)
 
-st.title("🤖 Deepu AI Bot - Ultimate Edition")
+# Custom Cyberpunk / JARVIS Styling CSS
+st.markdown("""
+    <style>
+    .stApp {
+        background-color: #0e1117;
+        color: #00ffcc;
+    }
+    .sidebar .stMarkdown {
+        color: #00ffcc;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+st.title("⚡ Deepu AI Bot [JARVIS & FRIDAY PROTOCOL]")
 
 # Streamlit secrets se API key uthana
 if "GROQ_API_KEY" in st.secrets:
@@ -18,7 +34,7 @@ else:
   st.stop()
 
 
-# --- DATABASE SETUP (Permanent History) ---
+# --- DATABASE SETUP (Permanent Memory & History) ---
 def init_db():
   conn = sqlite3.connect("chat_history.db", check_same_thread=False)
   cursor = conn.cursor()
@@ -45,44 +61,65 @@ if "messages" not in st.session_state:
     st.session_state.messages.append({"role": role, "content": content})
 
 
-# --- SIDEBAR: ULTIMATE CONTROLS ---
-with st.sidebar:
-  st.header("⚙️ Advanced Controls")
+# --- LIVE WEATHER & TIME FETCH (JARVIS Feature) ---
+def get_live_context():
+  current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+  weather_info = "Bikaner, India: Clear / Pleasant"
+  try:
+    # Free weather info fetch via wttr.in
+    res = requests.get(
+        "https://wttr.in/Bikaner?format=%t+%C", timeout=3
+    )  # Bikaner default
+    if res.status_code == 200:
+      weather_info = res.text.strip()
+  except:
+    pass
+  return current_time, weather_info
 
-  # 1. Persona / Mood Selector
-  st.subheader("🎭 AI ka Mizaj (Persona)")
+
+live_time, live_weather = get_live_context()
+
+
+# --- SIDEBAR: HOLOGRAPHIC JARVIS DASHBOARD ---
+with st.sidebar:
+  st.markdown("### 🛡️ SYSTEM STATUS: ONLINE")
+  st.markdown(f"🕒 **Time:** `{live_time}`")
+  st.markdown(f"🌤️ **Weather:** `{live_weather}`")
+  st.markdown("---")
+
+  st.subheader("⚙️ AI Persona / Mood")
   persona_mode = st.selectbox(
-      "Deepu AI ka andaz chuniye:",
+      "AI Protocol Chuniye:",
       [
+          "JARVIS / FRIDAY (Elite Tech Assistant)",
           "Desi Dost & Shayari Mode",
-          "Strict Professor / Tech Expert",
-          "Sarcastic & Comedy Mode",
+          "Strict Professor / Expert",
       ],
   )
 
   st.markdown("---")
+  st.subheader("🔊 Audio Output (Text-to-Speech)")
+  enable_tts = st.checkbox(
+      "AI ki Aawaz On Karein (Voice Reply)", value=False
+  )
 
-  # 2. Web URL Summarizer
+  st.markdown("---")
   st.subheader("🌐 Web URL Summarizer")
   website_url = st.text_input(
-      "Website ka Link (URL) yahan daalein:", placeholder="https://example.com"
+      "Website Link yahan daalein:", placeholder="https://example.com"
   )
   summarize_btn = st.button("Website Summarize Karein")
 
   st.markdown("---")
-
-  # 3. Photo Upload
   st.subheader("📸 Media Upload")
   uploaded_file = st.file_uploader(
       "Photo upload karein:", type=["jpg", "jpeg", "png"]
   )
   if uploaded_file is not None:
-    st.success("Photo upload ho gayi!")
+    st.success("Photo successfully linked!")
 
   st.markdown("---")
-
-  # 4. Voice Input (Mic)
-  st.subheader("🎙️ Voice Input")
+  st.subheader("🎙️ Voice Input (Mic)")
   audio_data = mic_recorder(
       start_prompt="🔴 Bolna Shuru Karein",
       stop_prompt="⏹️ Rok Dein",
@@ -91,27 +128,54 @@ with st.sidebar:
   )
 
 
-# --- SYSTEM PROMPT BUILDER BASED ON PERSONA ---
+# --- SYSTEM PROMPT BUILDER ---
 def get_system_prompt():
-  if persona_mode == "Desi Dost & Shayari Mode":
-    return "You are Deepu AI, a friendly, warm Indian best friend who speaks fluent Hindi/Hinglish, occasionally drops fun poetry (shayari), and talks with full warmth and desi style."
-  elif persona_mode == "Strict Professor / Tech Expert":
-    return "You are Deepu AI, a strict, highly intellectual professor and elite tech expert. You provide precise, structured, and deep factual answers without any unnecessary fluff."
+  base_context = (
+      f"Current System Time: {live_time}, Live Weather: {live_weather}."
+  )
+  if persona_mode == "JARVIS / FRIDAY (Elite Tech Assistant)":
+    return (
+        f"You are Deepu AI, operating under JARVIS and FRIDAY protocols (Iron"
+        f" Man's advanced AI suit systems). You are highly sophisticated,"
+        f" extremely loyal, intelligent, and address the user with supreme"
+        f" respect (like Boss/Sir). {base_context}"
+    )
+  elif persona_mode == "Desi Dost & Shayari Mode":
+    return (
+        f"You are Deepu AI, a warm Indian best friend who speaks Hinglish,"
+        f" drops shayari, and jokes around. {base_context}"
+    )
   else:
-    return "You are Deepu AI, a witty, slightly sarcastic, and humorous assistant who loves gentle teasing and comedy while still helping out."
+    return (
+        f"You are Deepu AI, a strict, technical professor providing precise"
+        f" answers. {base_context}"
+    )
 
 
-# --- HANDLE WEB URL SUMMARIZER ACTION ---
+# --- TEXT-TO-SPEECH JAVASCRIPT INJECTOR (JARVIS Voice) ---
+def speak_text(text):
+  if enable_tts:
+    # Safe HTML/JS snippet to trigger browser speech synthesis
+    clean_text = text.replace('"', "").replace("'", "").replace("\n", " ")
+    js_code = f"""
+        <script>
+            var msg = new SpeechSynthesisUtterance("{clean_text}");
+            msg.lang = 'hi-IN';
+            window.speechSynthesis.speak(msg);
+        </script>
+        """
+    st.markdown(js_code, unsafe_allow_html=True)
+
+
+# --- HANDLE WEB URL SUMMARIZER ---
 if summarize_btn and website_url:
   try:
     headers = {"User-Agent": "Mozilla/5.0"}
     page = requests.get(website_url, headers=headers, timeout=10)
     soup = BeautifulSoup(page.content, "html.parser")
-
-    # Saara text nikalna
     text_content = " ".join([p.text for p in soup.find_all("p")])
     if len(text_content) > 4000:
-      text_content = text_content[:4000]  # Limit length
+      text_content = text_content[:4000]
 
     summary_prompt = f"Is website content ka ek shandar aur clear summary Hindi mein likho:\n\n{text_content}"
 
@@ -128,8 +192,8 @@ if summarize_btn and website_url:
       )
       reply = response.choices[0].message.content
       st.markdown(reply)
+      speak_text(reply)
 
-      # Save to DB
       st.session_state.messages.append(
           {"role": "user", "content": f"Website Summary: {website_url}"}
       )
@@ -144,17 +208,15 @@ if summarize_btn and website_url:
       )
       conn.commit()
   except Exception as e:
-    st.error(f"Website fetch karne mein error aayi: {e}")
+    st.error(f"Website fetch error: {e}")
 
 
-# --- HANDLE VOICE INPUT (AUDIO DATA) ---
+# --- HANDLE VOICE TRANSCRIPTION (Whisper API) ---
 voice_text = None
 if audio_data and "bytes" in audio_data:
   try:
-    # Groq Whisper API se audio ko text mein convert karna
     with open("temp_audio.wav", "wb") as f:
       f.write(audio_data["bytes"])
-
     with open("temp_audio.wav", "rb") as audio_file:
       transcript = client.audio.transcriptions.create(
           model="whisper-large-v3", file=("temp_audio.wav", audio_file.read())
@@ -164,13 +226,13 @@ if audio_data and "bytes" in audio_data:
     st.error(f"Voice processing error: {e}")
 
 
-# --- PURANI MESSAGES SCREEN PAR DIKHANA ---
+# --- RENDER CHAT HISTORY ---
 for message in st.session_state.messages:
   with st.chat_message(message["role"]):
     st.markdown(message["content"])
 
 
-# --- MAIN CHAT FUNCTION ---
+# --- CORE RESPONSE PROCESSOR ---
 def process_and_respond(user_text):
   st.session_state.messages.append({"role": "user", "content": user_text})
   cursor.execute(
@@ -183,7 +245,6 @@ def process_and_respond(user_text):
 
   with st.chat_message("assistant"):
     try:
-      # Messages list taiyar karna with dynamic Persona system prompt
       chat_history_payload = [
           {"role": "system", "content": get_system_prompt()}
       ]
@@ -197,6 +258,7 @@ def process_and_respond(user_text):
       )
       reply = response.choices[0].message.content
       st.markdown(reply)
+      speak_text(reply)
 
       st.session_state.messages.append({"role": "assistant", "content": reply})
       cursor.execute(
@@ -208,10 +270,10 @@ def process_and_respond(user_text):
       st.error(f"Error: {e}")
 
 
-# Agar mic se text aaya hai toh use auto-process karo
+# Process voice text if received
 if voice_text:
   process_and_respond(voice_text)
 
 # --- CHAT INPUT (KEYBOARD) ---
-if prompt := st.chat_input("Deepu AI se kuch bhi poochein..."):
+if prompt := st.chat_input("JARVIS / Deepu AI se command dein..."):
   process_and_respond(prompt)
