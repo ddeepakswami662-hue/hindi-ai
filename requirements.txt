@@ -1,3 +1,5 @@
 streamlit
 groq
 streamlit-mic-recorder
+beautifulsoup4
+requests
