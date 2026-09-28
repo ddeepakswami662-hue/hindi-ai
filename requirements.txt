@@ -1,7 +1,7 @@
 streamlit
 groq
-streamlit-mic-recorder
-beautifulsoup4
-requests
-pypdf
 duckduckgo-search
+requests
+beautifulsoup4
+pypdf
+streamlit-mic-recorder
