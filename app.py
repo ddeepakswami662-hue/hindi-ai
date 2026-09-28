@@ -278,7 +278,14 @@ def get_system_prompt():
         else "No saved memory yet."
     )
 
-    base_context = f"Current IST Time: {ist_time}, Live Weather: {live_weather}. Permanent User Memory: {memory_context}"
+    base_context = (
+        f"Current IST Time: {ist_time}, Live Weather: {live_weather}."
+        f" Permanent User Memory: {memory_context}. IMPORTANT INSTRUCTION: You"
+        " have full access to live real-time internet data and search"
+        " results provided in the system messages. NEVER say that you do not"
+        " have real-time access or feeds. Always utilize the provided search"
+        " context to give up-to-date answers."
+    )
 
     if persona_mode == "JARVIS / FRIDAY (Elite Tech Assistant)":
         return (
@@ -451,7 +458,7 @@ if pdf_analyze_btn and uploaded_pdf is not None:
         st.error(f"Document processing error: {e}")
 
 
-# --- CORE RESPONSE PROCESSOR WITH OPENAI GPT-OSS-20B MODEL ---
+# --- CORE RESPONSE PROCESSOR ---
 def process_and_respond(user_text):
     st.session_state.messages.append({"role": "user", "content": user_text})
     cursor.execute(
@@ -482,7 +489,7 @@ def process_and_respond(user_text):
             if search_context:
                 chat_history_payload.append({
                     "role": "system",
-                    "content": f"Live Web Search Results for query '{user_text}':\n{search_context}\nUse these real-time internet facts to answer accurately."
+                    "content": f"Live Web Search Results for query '{user_text}':\n{search_context}\nUse these real-time internet facts to answer accurately. Never say you lack real-time access."
                 })
 
             for m in st.session_state.messages:
