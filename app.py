@@ -61,7 +61,7 @@ else:
                 ]
 
                 completion = client.chat.completions.create(
-                    model="llama3-8b-8192",
+                   model="openai/gpt-oss-20b",
                     messages=chat_history,
                     temperature=0.7,
                     max_tokens=1024,
