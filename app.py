@@ -332,7 +332,7 @@ if search_btn and search_query:
 
         with st.chat_message("assistant"):
             response = client.chat.completions.create(
-                model="mixtral-8x7b-32768",
+                model="llama-3.3-70b-versatile",
                 messages=[
                     {"role": "system", "content": get_system_prompt()},
                     {"role": "user", "content": prompt},
@@ -376,7 +376,7 @@ if summarize_btn and website_url:
 
         with st.chat_message("assistant"):
             response = client.chat.completions.create(
-                model="mixtral-8x7b-32768",
+                model="llama-3.3-70b-versatile",
                 messages=[
                     {"role": "system", "content": get_system_prompt()},
                     {"role": "user", "content": summary_prompt},
@@ -424,7 +424,7 @@ if pdf_analyze_btn and uploaded_pdf is not None:
 
         with st.chat_message("assistant"):
             response = client.chat.completions.create(
-                model="mixtral-8x7b-32768",
+                model="llama-3.3-70b-versatile",
                 messages=[
                     {"role": "system", "content": get_system_prompt()},
                     {"role": "user", "content": doc_prompt},
@@ -478,7 +478,7 @@ def process_and_respond(user_text):
                 {"role": "system", "content": get_system_prompt()}
             ]
 
-            # If search data is fetched, pass it safely as a document reference to avoid refusals
+            # If search data is fetched, pass it safely as a document reference
             if search_context:
                 chat_history_payload.append({
                     "role": "user",
@@ -491,7 +491,7 @@ def process_and_respond(user_text):
                     )
 
             response = client.chat.completions.create(
-                model="mixtral-8x7b-32768", messages=chat_history_payload
+                model="llama-3.3-70b-versatile", messages=chat_history_payload
             )
             reply = response.choices[0].message.content
             st.markdown(reply)
