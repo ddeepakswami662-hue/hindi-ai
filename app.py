@@ -1,9 +1,10 @@
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 import sqlite3
 import requests
 from bs4 import BeautifulSoup
 from groq import Groq
 import streamlit as st
+import streamlit.components.v1 as components
 from streamlit_mic_recorder import mic_recorder
 
 # --- PAGE CONFIG ---
@@ -11,15 +12,23 @@ st.set_page_config(
     page_title="Deepu AI - JARVIS Edition", page_icon="⚡", layout="wide"
 )
 
-# Custom Cyberpunk / JARVIS Styling CSS
+# --- CSS FIX FOR TEXT VISIBILITY & CYBERPUNK THEME ---
 st.markdown("""
     <style>
     .stApp {
         background-color: #0e1117;
-        color: #00ffcc;
     }
-    .sidebar .stMarkdown {
-        color: #00ffcc;
+    /* Text input aur select box mein text saaf dikhne ke liye */
+    .stTextInput input, .stSelectbox select, .stTextArea textarea {
+        color: #ffffff !important;
+        background-color: #1f2937 !important;
+    }
+    /* Saare general text aur labels ke liye readable white/light color */
+    p, label, .stMarkdown, span {
+        color: #e5e7eb !important;
+    }
+    h1, h2, h3 {
+        color: #00ffcc !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -61,29 +70,54 @@ if "messages" not in st.session_state:
     st.session_state.messages.append({"role": role, "content": content})
 
 
-# --- LIVE WEATHER & TIME FETCH (JARVIS Feature) ---
-def get_live_context():
-  current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+# --- LIVE WEATHER FETCH (Bikaner, India) ---
+def get_live_weather():
   weather_info = "Bikaner, India: Clear / Pleasant"
   try:
-    # Free weather info fetch via wttr.in
-    res = requests.get(
-        "https://wttr.in/Bikaner?format=%t+%C", timeout=3
-    )  # Bikaner default
+    res = requests.get("https://wttr.in/Bikaner?format=%t+%C", timeout=3)
     if res.status_code == 200:
       weather_info = res.text.strip()
   except:
     pass
-  return current_time, weather_info
+  return weather_info
 
 
-live_time, live_weather = get_live_context()
+live_weather = get_live_weather()
 
 
 # --- SIDEBAR: HOLOGRAPHIC JARVIS DASHBOARD ---
 with st.sidebar:
   st.markdown("### 🛡️ SYSTEM STATUS: ONLINE")
-  st.markdown(f"🕒 **Time:** `{live_time}`")
+
+  # Live Working Clock with Seconds (JavaScript + IST Timezone)
+  st.markdown("🕒 **Live IST Time & Seconds:**")
+  clock_html = """
+    <div style="font-family: monospace; font-size: 18px; color: #00ffcc; background: #161b22; padding: 12px; border-radius: 6px; text-align: center; border: 1px solid #30363d; font-weight: bold;">
+        <span id="clock">Loading...</span>
+    </div>
+    <script>
+    function updateClock() {
+        const now = new Date();
+        // Convert current time to India Standard Time (IST - UTC + 5:30)
+        const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+        const istTime = new Date(utc + (3600000 * 5.5));
+        
+        let hours = istTime.getHours();
+        let minutes = istTime.getMinutes();
+        let seconds = istTime.getSeconds();
+        
+        hours = hours < 10 ? '0' + hours : hours;
+        minutes = minutes < 10 ? '0' + minutes : minutes;
+        seconds = seconds < 10 ? '0' + seconds : seconds;
+        
+        document.getElementById('clock').innerHTML = hours + ':' + minutes + ':' + seconds;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+    </script>
+    """
+  components.html(clock_html, height=70)
+
   st.markdown(f"🌤️ **Weather:** `{live_weather}`")
   st.markdown("---")
 
@@ -130,8 +164,12 @@ with st.sidebar:
 
 # --- SYSTEM PROMPT BUILDER ---
 def get_system_prompt():
+  ist_time = (
+      datetime.now(timezone(timedelta(hours=5, minutes=30)))
+      .strftime("%Y-%m-%d %H:%M:%S")
+  )
   base_context = (
-      f"Current System Time: {live_time}, Live Weather: {live_weather}."
+      f"Current IST Time: {ist_time}, Live Weather: {live_weather}."
   )
   if persona_mode == "JARVIS / FRIDAY (Elite Tech Assistant)":
     return (
@@ -155,7 +193,6 @@ def get_system_prompt():
 # --- TEXT-TO-SPEECH JAVASCRIPT INJECTOR (JARVIS Voice) ---
 def speak_text(text):
   if enable_tts:
-    # Safe HTML/JS snippet to trigger browser speech synthesis
     clean_text = text.replace('"', "").replace("'", "").replace("\n", " ")
     js_code = f"""
         <script>
