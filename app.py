@@ -1,77 +1,39 @@
 import streamlit as st
 from groq import Groq
 
-# Page configuration
-st.set_page_config(
-    page_title="Hindi AI Chat Bot",
-    page_icon="🤖",
-    layout="centered"
-)
-
-# App header
 st.title("🤖 Hindi AI Chat Bot")
-st.write("Apni Groq API Key dalein aur khul kar Hindi mein baat karein!")
 
-# Sidebar for API Key
-with st.sidebar:
-    st.header("🔑 Settings")
-    api_key_input = st.text_input("Groq API Key:", type="password", help="Apni Groq API Key yahan paste karein")
-    st.markdown("---")
-    st.markdown("**Powered by:** Groq (Llama 3) & Streamlit")
-
-# Main Chat Logic
-if not api_key_input:
-    st.warning("⚠️ Kripya shuru karne ke liye sidebar mein apni Groq API Key dalein.")
+# Streamlit secrets se API key automatically uthayega
+if "GROQ_API_KEY" in st.secrets:
+   client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 else:
-    client = Groq(api_key=api_key_input)
-    
-    # Initialize chat history in session state
-    if "messages" not in st.session_state:
-        st.session_state.messages = [
-            {"role": "assistant", "content": "Namaste! Main aapka Hindi AI assistant hoon. Aaj main aapki kya madad kar sakta hoon?"}
-        ]
+    st.error("Groq API Key missing! Please configure it in Streamlit Secrets.")
+    st.stop()
 
-    # Display chat history
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+# Chat input aur model call
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-    # User input prompt
-    if prompt := st.chat_input("Yahan apna sawal Hindi mein likhein..."):
-        # Add user message to state
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
 
-        # Generate response from Groq
-        with st.chat_message("assistant"):
-            message_placeholder = st.empty()
-            message_placeholder.markdown("Soch raha hoon...")
-            
-            try:
-                # System prompt to ensure Hindi replies
-                system_instruction = {
-                    "role": "system", 
-                    "content": "You are a helpful, smart, and polite AI assistant. Always reply naturally and fluently in Hindi (Devanagari script), unless the user asks in English."
-                }
-                
-                # Format messages for Groq API
-                chat_history = [system_instruction] + [
-                    {"role": m["role"], "content": m["content"]} for m in st.session_state.messages
-                ]
+if prompt := st.chat_input("Apna sawal yahan poochein..."):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
 
-                completion = client.chat.completions.create(
-                   model="openai/gpt-oss-20b",
-                    messages=chat_history,
-                    temperature=0.7,
-                    max_tokens=1024,
-                )
-                
-                response_text = completion.choices[0].message.content
-                message_placeholder.markdown(response_text)
-                
-                # Save assistant response
-                st.session_state.messages.append({"role": "assistant", "content": response_text})
-                
-            except Exception as e:
-                message_placeholder.error(f"Koyi error aa gaya hai: {e}")
+    with st.chat_message("assistant"):
+        try:
+            response = client.chat.completions.create(
+                model="openai/gpt-oss-20b",
+                messages=[
+                    {"role": m["role"], "content": m["content"]}
+                    for m in st.session_state.messages
+                ],
+            )
+            reply = response.choices[0].message.content
+            st.markdown(reply)
+            st.session_state.messages.append({"role": "assistant", "content": reply})
+        except Exception as e:
+            st.error(f"Error: {e}")
