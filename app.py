@@ -11,10 +11,8 @@ import streamlit as st
 import streamlit.components.v1 as components
 from streamlit_mic_recorder import mic_recorder
 
-# --- PAGE CONFIG ---
-st.set_page_configimport streamlit as st
+import streamlit as st
 
-# --- PAGE CONFIG WITH FORCED BROWSER TITLE ---
 st.set_page_config(
     page_title="Deepu AI Bot", page_icon="🤖", layout="wide"
 )
