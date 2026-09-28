@@ -278,14 +278,7 @@ def get_system_prompt():
         else "No saved memory yet."
     )
 
-    base_context = (
-        f"Current IST Time: {ist_time}, Live Weather: {live_weather}."
-        f" Permanent User Memory: {memory_context}. IMPORTANT INSTRUCTION: You"
-        " have full access to live real-time internet data and search"
-        " results provided in the system messages. NEVER say that you do not"
-        " have real-time access or feeds. Always utilize the provided search"
-        " context to give up-to-date answers."
-    )
+    base_context = f"Current IST Time: {ist_time}, Live Weather: {live_weather}. Permanent User Memory: {memory_context}"
 
     if persona_mode == "JARVIS / FRIDAY (Elite Tech Assistant)":
         return (
@@ -332,14 +325,14 @@ if search_btn and search_query:
         with DDGS() as ddgs:
             results = [r for r in ddgs.text(search_query, max_results=3, region='wt-wt', safesearch='off')]
         search_summary = "\n".join([f"- {r['title']}: {r['body']}" for r in results]) if results else "No direct results found."
-        prompt = f"Live Search Results for '{search_query}':\n{search_summary}\n\nIn results ke adhaar par clear jawab Hindi mein dein:"
+        prompt = f"Yahan internet se retrieved latest search data hai '{search_query}' ke liye:\n{search_summary}\n\nIs data ko padh kar user ke liye detail mein Hindi mein jawab taiyar karein:"
 
         with st.chat_message("user"):
             st.markdown(f"🔍 **Live Search:** {search_query}")
 
         with st.chat_message("assistant"):
             response = client.chat.completions.create(
-                model="openai/gpt-oss-20b",
+                model="mixtral-8x7b-32768",
                 messages=[
                     {"role": "system", "content": get_system_prompt()},
                     {"role": "user", "content": prompt},
@@ -383,7 +376,7 @@ if summarize_btn and website_url:
 
         with st.chat_message("assistant"):
             response = client.chat.completions.create(
-                model="openai/gpt-oss-20b",
+                model="mixtral-8x7b-32768",
                 messages=[
                     {"role": "system", "content": get_system_prompt()},
                     {"role": "user", "content": summary_prompt},
@@ -431,7 +424,7 @@ if pdf_analyze_btn and uploaded_pdf is not None:
 
         with st.chat_message("assistant"):
             response = client.chat.completions.create(
-                model="openai/gpt-oss-20b",
+                model="mixtral-8x7b-32768",
                 messages=[
                     {"role": "system", "content": get_system_prompt()},
                     {"role": "user", "content": doc_prompt},
@@ -471,7 +464,7 @@ def process_and_respond(user_text):
 
     with st.chat_message("assistant"):
         try:
-            # Automatically fetch live web results securely
+            # Automatically fetch live web results securely and format as context
             search_context = ""
             try:
                 with DDGS() as ddgs:
@@ -485,20 +478,20 @@ def process_and_respond(user_text):
                 {"role": "system", "content": get_system_prompt()}
             ]
 
-            # Inject real-time search context
+            # If search data is fetched, pass it safely as a document reference to avoid refusals
             if search_context:
                 chat_history_payload.append({
-                    "role": "system",
-                    "content": f"Live Web Search Results for query '{user_text}':\n{search_context}\nUse these real-time internet facts to answer accurately. Never say you lack real-time access."
+                    "role": "user",
+                    "content": f"[Reference Data Retrieved from Web for '{user_text}']: \n{search_context}\n\nPlease answer the user's query using the above reference data clearly in Hindi."
                 })
-
-            for m in st.session_state.messages:
-                chat_history_payload.append(
-                    {"role": m["role"], "content": m["content"]}
-                )
+            else:
+                for m in st.session_state.messages:
+                    chat_history_payload.append(
+                        {"role": m["role"], "content": m["content"]}
+                    )
 
             response = client.chat.completions.create(
-                model="openai/gpt-oss-20b", messages=chat_history_payload
+                model="mixtral-8x7b-32768", messages=chat_history_payload
             )
             reply = response.choices[0].message.content
             st.markdown(reply)
