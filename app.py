@@ -9,7 +9,7 @@ st.set_page_config(
 )
 
 # App header
-st.title("🤖 Desi Hindi AI Assistant")
+st.title("🤖 Hindi AI Chat Bot")
 st.write("Apni Groq API Key dalein aur khul kar Hindi mein baat karein!")
 
 # Sidebar for API Key
