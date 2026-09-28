@@ -334,7 +334,7 @@ if search_btn and search_query:
 
         with st.chat_message("assistant"):
             response = client.chat.completions.create(
-                model="openai/gpt-oss-20b",
+                model="llama-3.3-70b-versatile",
                 messages=[
                     {"role": "system", "content": get_system_prompt()},
                     {"role": "user", "content": prompt},
@@ -378,7 +378,7 @@ if summarize_btn and website_url:
 
         with st.chat_message("assistant"):
             response = client.chat.completions.create(
-                model="openai/gpt-oss-20b",
+                model="llama-3.3-70b-versatile",
                 messages=[
                     {"role": "system", "content": get_system_prompt()},
                     {"role": "user", "content": summary_prompt},
@@ -426,7 +426,7 @@ if pdf_analyze_btn and uploaded_pdf is not None:
 
         with st.chat_message("assistant"):
             response = client.chat.completions.create(
-                model="openai/gpt-oss-20b",
+                model="llama-3.3-70b-versatile",
                 messages=[
                     {"role": "system", "content": get_system_prompt()},
                     {"role": "user", "content": doc_prompt},
@@ -453,7 +453,7 @@ if pdf_analyze_btn and uploaded_pdf is not None:
         st.error(f"Document processing error: {e}")
 
 
-# --- CORE RESPONSE PROCESSOR WITH STRICT WEB SEARCH INJECTION ---
+# --- CORE RESPONSE PROCESSOR WITH LAMA 3.3 MODEL ---
 def process_and_respond(user_text):
     st.session_state.messages.append({"role": "user", "content": user_text})
     cursor.execute(
@@ -480,11 +480,11 @@ def process_and_respond(user_text):
                 {"role": "system", "content": get_system_prompt()}
             ]
 
-            # Inject real-time search context with strict instructions
+            # Inject real-time search context
             if search_context:
                 chat_history_payload.append({
                     "role": "system",
-                    "content": f"IMPORTANT INSTRUCTION: Real-time web search results for the user's query are provided below. You MUST use these facts to answer the user directly. DO NOT say that you don't have access to live news or real-time updates.\n\nLive Search Data:\n{search_context}"
+                    "content": f"Live Web Search Results for query '{user_text}':\n{search_context}\nUse these real-time internet facts to answer accurately."
                 })
 
             for m in st.session_state.messages:
@@ -493,7 +493,7 @@ def process_and_respond(user_text):
                 )
 
             response = client.chat.completions.create(
-                model="openai/gpt-oss-20b", messages=chat_history_payload
+                model="llama-3.3-70b-versatile", messages=chat_history_payload
             )
             reply = response.choices[0].message.content
             st.markdown(reply)
@@ -526,6 +526,9 @@ if audio_data and "bytes" in audio_data:
 
 
 # --- RENDER CHAT HISTORY ---
+for message in st.session_name.messages if "messages" in st.session_state else []: # Fallback fix
+    pass
+
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
