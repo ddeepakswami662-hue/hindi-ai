@@ -85,31 +85,37 @@ else:
     st.stop()
 
 
-# --- SMART CHAT MODEL DISCOVERY (Excludes Classifiers & Guards) ---
+# --- SMART CHAT MODEL DISCOVERY ---
 @st.cache_resource
 def get_active_model():
     try:
         models = client.models.list()
-        # First try to find a valid chat/instruct llama model
+        valid_models = []
         for m in models.data:
             mid = m.id.lower()
-            if any(bad in mid for bad in ["embed", "guard", "classify", "classifier", "reward"]):
-                continue
-            if "llama" in mid and ("instruct" in mid or "chat" in mid or "versatile" in mid):
-                return m.id
-        
-        # Fallback to any non-classifier model containing llama
-        for m in models.data:
-            mid = m.id.lower()
-            if not any(bad in mid for bad in ["embed", "guard", "classify", "classifier", "reward"]):
-                if "llama" in mid:
-                    return m.id
+            if not any(
+                bad in mid
+                for bad in [
+                    "embed",
+                    "guard",
+                    "classify",
+                    "classifier",
+                    "reward",
+                    "whisper",
+                    "tts",
+                ]
+            ):
+                valid_models.append(m.id)
+        if valid_models:
+            return valid_models[0]
+        if models.data:
+            return models.data[0].id
     except Exception:
         pass
-    return "llama-3.3-70b-versatile"
+    return "llama3-70b-8192"
 
 
-ACTIVE_MODEL = get_active_model()
+INITIAL_MODEL = get_active_model()
 
 
 # --- PASSWORD LOCK SCREEN GATE ---
@@ -146,52 +152,6 @@ def check_password():
 
 # Run security check
 check_password()
-
-# --- TOP HEADER BANNER ---
-st.markdown(f"""
-    <div class="top-header-banner">
-        <div>
-            <h1 class="top-header-title">🤖 Deepu AI Bot</h1>
-            <p class="top-header-subtitle">JARVIS & FRIDAY Autonomous OS • Model: {ACTIVE_MODEL}</p>
-        </div>
-        <div style="text-align: right;">
-            <span style="background: #065f46; color: #34d399; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold;">● SECURED & ONLINE</span>
-        </div>
-    </div>
-""", unsafe_allow_html=True)
-
-
-# --- DATABASE SETUP ---
-def init_db():
-    conn = sqlite3.connect("chat_history.db", check_same_thread=False)
-    cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS messages (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            role TEXT,
-            content TEXT
-        )
-    """)
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS user_memory (
-            key TEXT PRIMARY KEY,
-            value TEXT
-        )
-    """)
-    conn.commit()
-    return conn, cursor
-
-
-conn, cursor = init_db()
-
-cursor.execute("SELECT role, content FROM messages")
-db_messages = cursor.fetchall()
-
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-    for role, content in db_messages:
-        st.session_state.messages.append({"role": role, "content": content})
-
 
 # --- LIVE WEATHER FETCH ---
 def get_live_weather():
@@ -241,6 +201,36 @@ with st.sidebar:
     st.markdown(f"🌤️ **Weather:** `{live_weather}`")
     st.markdown("---")
 
+    # --- MANUAL MODEL SELECTOR (Prevents Model Not Found Errors Forever) ---
+    st.subheader("🤖 AI Model Override")
+    try:
+        all_models = client.models.list().data
+        model_options = [
+            m.id
+            for m in all_models
+            if not any(
+                x in m.id.lower()
+                for x in ["embed", "guard", "classify", "whisper", "tts"]
+            )
+        ]
+        if not model_options:
+            model_options = [INITIAL_MODEL]
+    except Exception:
+        model_options = [INITIAL_MODEL]
+
+    selected_model_idx = (
+        model_options.index(INITIAL_MODEL)
+        if INITIAL_MODEL in model_options
+        else 0
+    )
+    ACTIVE_MODEL = st.selectbox(
+        "Active Model Chuniye:",
+        model_options,
+        index=selected_model_idx,
+        help="Agar koi model error de, yahan se doosra model select karein.",
+    )
+
+    st.markdown("---")
     st.subheader("⚙️ AI Protocol / Mood")
     persona_mode = st.selectbox(
         "AI Protocol Chuniye:",
@@ -289,6 +279,52 @@ with st.sidebar:
         just_once=True,
         key="voice_input",
     )
+
+
+# --- TOP HEADER BANNER ---
+st.markdown(f"""
+    <div class="top-header-banner">
+        <div>
+            <h1 class="top-header-title">🤖 Deepu AI Bot</h1>
+            <p class="top-header-subtitle">JARVIS & FRIDAY Autonomous OS • Model: {ACTIVE_MODEL}</p>
+        </div>
+        <div style="text-align: right;">
+            <span style="background: #065f46; color: #34d399; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold;">● SECURED & ONLINE</span>
+        </div>
+    </div>
+""", unsafe_allow_html=True)
+
+
+# --- DATABASE SETUP ---
+def init_db():
+    conn = sqlite3.connect("chat_history.db", check_same_thread=False)
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            role TEXT,
+            content TEXT
+        )
+    """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS user_memory (
+            key TEXT PRIMARY KEY,
+            value TEXT
+        )
+    """)
+    conn.commit()
+    return conn, cursor
+
+
+conn, cursor = init_db()
+
+cursor.execute("SELECT role, content FROM messages")
+db_messages = cursor.fetchall()
+
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+    for role, content in db_messages:
+        st.session_state.messages.append({"role": role, "content": content})
 
 
 # --- SYSTEM PROMPT BUILDER ---
