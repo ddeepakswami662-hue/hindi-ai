@@ -3,7 +3,8 @@ import streamlit as st
 from groq import Groq
 from streamlit_mic_recorder import mic_recorder
 
-st.title("🤖 Hindi AI Chat Bot (History + Photo + Mic)")
+# --- CLEAN TITLE ---
+st.title("🤖 Deepu AI Bot")
 
 # Streamlit secrets se API key uthana
 if "GROQ_API_KEY" in st.secrets:
@@ -40,9 +41,9 @@ if "messages" not in st.session_state:
     st.session_state.messages.append({"role": role, "content": content})
 
 
-# --- SIDEBAR: PHOTO & MIC INPUT ---
+# --- SIDEBAR ---
 with st.sidebar:
-  st.header("⚙️ Media & Voice")
+  st.header("⚙️ Settings")
 
   # 1. Photo Upload
   uploaded_file = st.file_uploader(
@@ -53,14 +54,10 @@ with st.sidebar:
 
   st.markdown("---")
   st.subheader("🎙️ Voice Input")
-  st.write("Bol kar message bhejne ke liye mic dabayein:")
 
-  # 2. Mic Recorder Button (Streamlit Mic Recorder)
+  # 2. Mic Recorder Button
   audio_data = mic_recorder(
-      start_prompt="🔴 Mic On (Bolna shuru karein)",
-      stop_prompt="⏹️ Rok dein",
-      just_once=True,
-      key="voice_input",
+      start_prompt="🔴 Mic On", stop_prompt="⏹️ Rok dein", just_once=True, key="voice_input"
   )
 
 
@@ -106,10 +103,6 @@ def process_and_respond(user_text):
       st.error(f"Error: {e}")
 
 
-# --- 1. Agar Mic se audio record hua hai (Abhi audio bytes milti hain, text conversion ke liye future update kar sakte hain) ---
-# Note: Mic recorder audio data deta hai. Filhal text input main primary chat ke liye chal raha hai.
-# Agar user ne text type kiya hai toh usko handle karte hain:
-
-# --- CHAT INPUT (Keyboard) ---
-if prompt := st.chat_input("Apna sawal yahan poochein..."):
+# --- CHAT INPUT ---
+if prompt := st.chat_input("Yahan kuch bhi poochein..."):
   process_and_respond(prompt)
