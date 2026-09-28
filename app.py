@@ -13,10 +13,10 @@ from streamlit_mic_recorder import mic_recorder
 
 # --- PAGE CONFIG ---
 st.set_page_config(
-    page_title="Deepu AI - JARVIS OS", page_icon="⚡", layout="wide"
+    page_title="Deepu AI - SECURE OS", page_icon="🔒", layout="wide"
 )
 
-# --- ADVANCED CYBERPUNK CSS & PERMANENT TOP HEADER ---
+# --- SECURITY & CYBERPUNK CSS ---
 st.markdown("""
     <style>
     .stApp {
@@ -67,32 +67,73 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# --- SECURE API & PASSWORD CHECK ---
+if "GROQ_API_KEY" in st.secrets and "APP_PASSWORD" in st.secrets:
+  client = Groq(api_key=st.secrets["GROQ_API_KEY"])
+  CORRECT_PASSWORD = st.secrets["APP_PASSWORD"]
+else:
+  st.error(
+      "Missing API Key or App Password in Streamlit Secrets! Please configure"
+      " them."
+  )
+  st.stop()
+
+
+# --- PASSWORD LOCK SCREEN GATE ---
+def check_password():
+  if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+
+  if not st.session_state.authenticated:
+    st.markdown("""
+            <div style='text-align: center; margin-top: 100px;'>
+                <h1 style='color: #00ffcc;'>🔒 SECURITY LOCKDOWN PROTOCOL</h1>
+                <p style='color: #9ca3af;'>This system belongs exclusively to Deepu. Unauthorized access is blocked.</p>
+            </div>
+        """, unsafe_allow_html=True)
+
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+      entered_pwd = st.text_input(
+          "Enter Access Passcode:",
+          type="password",
+          placeholder="Passcode daalein...",
+      )
+      if st.button("Unlock System"):
+        if entered_pwd == CORRECT_PASSWORD:
+          st.session_state.authenticated = True
+          st.rerun()
+        else:
+          st.error(
+              "⚠️ Access Denied! Galat Passcode. Sirf Master user ko permission"
+              " hai."
+          )
+    st.stop()
+
+
+# Run the security gate
+check_password()
+
+# --- IF UNLOCKED: FULL SYSTEM LOADS BELOW ---
+
 # Top Header Banner
 st.markdown("""
     <div class="top-header-banner">
         <div>
             <h1 class="top-header-title">🤖 Deepu AI Bot</h1>
-            <p class="top-header-subtitle">JARVIS & FRIDAY Autonomous OS • Ultimate Edition</p>
+            <p class="top-header-subtitle">JARVIS & FRIDAY Autonomous OS • Secured Edition</p>
         </div>
         <div style="text-align: right;">
-            <span style="background: #065f46; color: #34d399; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold;">● SYSTEM ONLINE</span>
+            <span style="background: #065f46; color: #34d399; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold;">● SECURED & ONLINE</span>
         </div>
     </div>
 """, unsafe_allow_html=True)
 
-# Streamlit secrets se API key uthana
-if "GROQ_API_KEY" in st.secrets:
-  client = Groq(api_key=st.secrets["GROQ_API_KEY"])
-else:
-  st.error("Groq API Key missing! Please configure it in Streamlit Secrets.")
-  st.stop()
 
-
-# --- DATABASE SETUP (Permanent Memory & User Profiles) ---
+# --- DATABASE SETUP ---
 def init_db():
   conn = sqlite3.connect("chat_history.db", check_same_thread=False)
   cursor = conn.cursor()
-  # Chat Messages Table
   cursor.execute("""
         CREATE TABLE IF NOT EXISTS messages (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -100,7 +141,6 @@ def init_db():
             content TEXT
         )
     """)
-  # User Memory Table
   cursor.execute("""
         CREATE TABLE IF NOT EXISTS user_memory (
             key TEXT PRIMARY KEY,
@@ -113,7 +153,6 @@ def init_db():
 
 conn, cursor = init_db()
 
-# Load chat history
 cursor.execute("SELECT role, content FROM messages")
 db_messages = cursor.fetchall()
 
@@ -123,7 +162,7 @@ if "messages" not in st.session_state:
     st.session_state.messages.append({"role": role, "content": content})
 
 
-# --- LIVE WEATHER FETCH (Bikaner, India) ---
+# --- LIVE WEATHER FETCH ---
 def get_live_weather():
   weather_info = "Bikaner, India: Clear / Pleasant"
   try:
@@ -138,11 +177,10 @@ def get_live_weather():
 live_weather = get_live_weather()
 
 
-# --- SIDEBAR: ULTIMATE JARVIS CONTROL CENTER ---
+# --- SIDEBAR CONTROL CENTER ---
 with st.sidebar:
-  st.markdown("### 🛡️ SYSTEM STATUS")
+  st.markdown("### 🛡️ SECURITY: LOCKED & SECURE")
 
-  # Live IST Clock with Seconds
   clock_html = """
     <div style="font-family: monospace; font-size: 15px; color: #00ffcc; background: #1f2937; padding: 8px; border-radius: 6px; text-align: center; border: 1px solid #374151; font-weight: bold; margin-bottom: 10px;">
         🕒 IST: <span id="clock">Loading...</span>
@@ -224,7 +262,6 @@ def get_system_prompt():
       datetime.now(timezone(timedelta(hours=5, minutes=30)))
       .strftime("%Y-%m-%d %H:%M:%S")
   )
-  # Fetch stored user memory
   cursor.execute("SELECT key, value FROM user_memory")
   memories = cursor.fetchall()
   memory_context = (
@@ -237,24 +274,20 @@ def get_system_prompt():
 
   if persona_mode == "JARVIS / FRIDAY (Elite Tech Assistant)":
     return (
-        f"You are Deepu AI, operating under JARVIS and FRIDAY protocols (Iron"
-        f" Man's advanced AI suit systems). You are highly sophisticated,"
-        f" loyal, and address the user with supreme respect (Boss/Sir)."
-        f" {base_context}"
+        f"You are Deepu AI, operating under JARVIS and FRIDAY protocols. You"
+        f" serve only Deepu (Boss) with supreme loyalty. {base_context}"
     )
   elif persona_mode == "Desi Dost & Shayari Mode":
     return (
-        f"You are Deepu AI, a warm Indian best friend who speaks Hinglish and"
-        f" drops shayari. {base_context}"
+        f"You are Deepu AI, a warm Indian best friend who speaks Hinglish. {base_context}"
     )
   else:
     return (
-        f"You are Deepu AI, a strict, technical professor providing precise"
-        f" answers. {base_context}"
+        f"You are Deepu AI, a strict, technical professor. {base_context}"
     )
 
 
-# --- TEXT-TO-SPEECH JAVASCRIPT INJECTOR ---
+# --- TEXT-TO-SPEECH ---
 def speak_text(text):
   if enable_tts:
     clean_text = text.replace('"', "").replace("'", "").replace("\n", " ")
@@ -274,8 +307,7 @@ if search_btn and search_query:
     with DDGS() as ddgs:
       results = [r for r in ddgs.text(search_query, max_results=3)]
     search_summary = "\n".join([f"- {r['title']}: {r['body']}" for r in results])
-
-    prompt = f"Live Search Results for '{search_query}':\n{search_summary}\n\nIn results ke adhaar par ek behtareen aur clear jawab Hindi mein dein:"
+    prompt = f"Live Search Results for '{search_query}':\n{search_summary}\n\nIn results ke adhaar par clear jawab Hindi mein dein:"
 
     with st.chat_message("user"):
       st.markdown(f"🔍 **Live Search:** {search_query}")
@@ -319,7 +351,7 @@ if summarize_btn and website_url:
     if len(text_content) > 4000:
       text_content = text_content[:4000]
 
-    summary_prompt = f"Is website content ka ek shandar aur clear summary Hindi mein likho:\n\n{text_content}"
+    summary_prompt = f"Is website content ka summary Hindi mein likho:\n\n{text_content}"
 
     with st.chat_message("user"):
       st.markdown(f"🌐 **Website Summary Request:** {website_url}")
@@ -353,7 +385,7 @@ if summarize_btn and website_url:
     st.error(f"Website fetch error: {e}")
 
 
-# --- PDF / DOCUMENT ANALYZER MODULE ---
+# --- PDF ANALYZER MODULE ---
 if pdf_analyze_btn and uploaded_pdf is not None:
   try:
     file_text = ""
@@ -367,7 +399,7 @@ if pdf_analyze_btn and uploaded_pdf is not None:
     if len(file_text) > 4000:
       file_text = file_text[:4000]
 
-    doc_prompt = f"Yeh ek uploaded document/file hai. Iska pura analysis aur summary Hindi mein batao:\n\n{file_text}"
+    doc_prompt = f"Yeh uploaded document/file hai. Iska analysis Hindi mein batao:\n\n{file_text}"
 
     with st.chat_message("user"):
       st.markdown(f"📄 **Document Analyzed:** `{uploaded_pdf.name}`")
@@ -401,7 +433,7 @@ if pdf_analyze_btn and uploaded_pdf is not None:
     st.error(f"Document processing error: {e}")
 
 
-# --- VOICE TRANSCRIPTION (Whisper API) ---
+# --- VOICE TRANSCRIPTION ---
 voice_text = None
 if audio_data and "bytes" in audio_data:
   try:
@@ -422,7 +454,7 @@ for message in st.session_state.messages:
     st.markdown(message["content"])
 
 
-# --- CORE RESPONSE PROCESSOR & CODE EXECUTION SANDBOX ---
+# --- CORE RESPONSE PROCESSOR ---
 def process_and_respond(user_text):
   st.session_state.messages.append({"role": "user", "content": user_text})
   cursor.execute(
@@ -450,24 +482,6 @@ def process_and_respond(user_text):
       st.markdown(reply)
       speak_text(reply)
 
-      # --- SPECIAL SANDBOX: Agar user ne python code run karne ko kaha ho ---
-      if "run code" in user_text.lower() or "execute" in user_text.lower():
-        if "```python" in reply:
-          try:
-            code_str = reply.split("```python")[1].split("```")[0]
-            old_stdout = sys.stdout
-            new_stdout = io.StringIO()
-            sys.stdout = new_stdout
-            exec(code_str, {})
-            sys.stdout = old_stdout
-            output_result = new_stdout.getvalue()
-            if output_result:
-              exec_msg = f"⚙️ **Sandbox Output:**\n```\n{output_result}\n```"
-              st.markdown(exec_msg)
-              reply += f"\n\n{exec_msg}"
-          except Exception as code_err:
-            pass
-
       st.session_state.messages.append({"role": "assistant", "content": reply})
       cursor.execute(
           "INSERT INTO messages (role, content) VALUES (?, ?)",
@@ -478,10 +492,9 @@ def process_and_respond(user_text):
       st.error(f"Error: {e}")
 
 
-# Process voice text if received
 if voice_text:
   process_and_respond(voice_text)
 
-# --- CHAT INPUT (KEYBOARD) ---
+# --- CHAT INPUT ---
 if prompt := st.chat_input("JARVIS / Deepu AI se command dein..."):
   process_and_respond(prompt)
