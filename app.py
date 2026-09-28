@@ -85,16 +85,25 @@ else:
     st.stop()
 
 
-# --- AUTOMATIC MODEL DISCOVERY ---
+# --- SMART CHAT MODEL DISCOVERY (Excludes Classifiers & Guards) ---
 @st.cache_resource
 def get_active_model():
     try:
         models = client.models.list()
+        # First try to find a valid chat/instruct llama model
         for m in models.data:
-            if "llama" in m.id.lower():
+            mid = m.id.lower()
+            if any(bad in mid for bad in ["embed", "guard", "classify", "classifier", "reward"]):
+                continue
+            if "llama" in mid and ("instruct" in mid or "chat" in mid or "versatile" in mid):
                 return m.id
-        if models.data:
-            return models.data[0].id
+        
+        # Fallback to any non-classifier model containing llama
+        for m in models.data:
+            mid = m.id.lower()
+            if not any(bad in mid for bad in ["embed", "guard", "classify", "classifier", "reward"]):
+                if "llama" in mid:
+                    return m.id
     except Exception:
         pass
     return "llama-3.3-70b-versatile"
@@ -482,7 +491,6 @@ def process_and_respond(user_text):
 
     with st.chat_message("assistant"):
         try:
-            # Automatically fetch live web results securely and format as context
             search_context = ""
             try:
                 with DDGS() as ddgs:
@@ -496,14 +504,12 @@ def process_and_respond(user_text):
                 {"role": "system", "content": get_system_prompt()}
             ]
 
-            # If search data is fetched, pass it safely as a document reference
             if search_context:
                 chat_history_payload.append({
                     "role": "user",
                     "content": f"[Reference Data Retrieved from Web for '{user_text}']: \n{search_context}\n\nPlease answer the user's query using the above reference data clearly in Hindi."
                 })
             else:
-                # SLIDING WINDOW: Keep only the last 10 messages to prevent token length overflow
                 recent_messages = st.session_state.messages[-10:] if len(st.session_state.messages) > 10 else st.session_state.messages
                 for m in recent_messages:
                     chat_history_payload.append(
