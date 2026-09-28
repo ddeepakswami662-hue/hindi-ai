@@ -5,3 +5,4 @@ requests
 beautifulsoup4
 pypdf
 streamlit-mic-recorder
+duckduckgo_search
