@@ -85,12 +85,11 @@ else:
     st.stop()
 
 
-# --- AUTOMATIC MODEL DISCOVERY (Prevents 404 Deprecation Errors) ---
+# --- AUTOMATIC MODEL DISCOVERY ---
 @st.cache_resource
 def get_active_model():
     try:
         models = client.models.list()
-        # Prefer llama models
         for m in models.data:
             if "llama" in m.id.lower():
                 return m.id
@@ -504,7 +503,9 @@ def process_and_respond(user_text):
                     "content": f"[Reference Data Retrieved from Web for '{user_text}']: \n{search_context}\n\nPlease answer the user's query using the above reference data clearly in Hindi."
                 })
             else:
-                for m in st.session_state.messages:
+                # SLIDING WINDOW: Keep only the last 10 messages to prevent token length overflow
+                recent_messages = st.session_state.messages[-10:] if len(st.session_state.messages) > 10 else st.session_state.messages
+                for m in recent_messages:
                     chat_history_payload.append(
                         {"role": m["role"], "content": m["content"]}
                     )
